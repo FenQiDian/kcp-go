@@ -40,8 +40,8 @@ const (
 )
 
 var (
-	errInvalidOperation = errors.New("invalid operation")
-	errTimeout          = errors.New("timeout")
+	ErrInvalidOperation = errors.New("invalid operation")
+	ErrTimeout          = errors.New("timeout")
 )
 
 var (
@@ -242,7 +242,7 @@ func (s *UDPSession) Recv(b []byte, deadline time.Time) (n int, err error) {
 		if !s.rd.IsZero() {
 			if time.Now().After(s.rd) {
 				s.mu.Unlock()
-				return 0, errors.WithStack(errTimeout)
+				return 0, errors.WithStack(ErrTimeout)
 			}
 
 			delay := time.Until(s.rd)
@@ -258,7 +258,7 @@ func (s *UDPSession) Recv(b []byte, deadline time.Time) (n int, err error) {
 				timeout.Stop()
 			}
 		case <-c:
-			return 0, errors.WithStack(errTimeout)
+			return 0, errors.WithStack(ErrTimeout)
 		case <-s.chSocketReadError:
 			return 0, s.socketReadError.Load().(error)
 		case <-s.die:
@@ -324,7 +324,7 @@ func (s *UDPSession) SendBatch(v [][]byte, deadline time.Time) (n int, err error
 		if !s.wd.IsZero() {
 			if time.Now().After(s.wd) {
 				s.mu.Unlock()
-				return 0, errors.WithStack(errTimeout)
+				return 0, errors.WithStack(ErrTimeout)
 			}
 			delay := time.Until(s.wd)
 			timeout = time.NewTimer(delay)
@@ -338,7 +338,7 @@ func (s *UDPSession) SendBatch(v [][]byte, deadline time.Time) (n int, err error
 				timeout.Stop()
 			}
 		case <-c:
-			return 0, errors.WithStack(errTimeout)
+			return 0, errors.WithStack(ErrTimeout)
 		case <-s.chSocketWriteError:
 			return 0, s.socketWriteError.Load().(error)
 		case <-s.die:
@@ -501,7 +501,7 @@ func (s *UDPSession) SetDSCP(dscp int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.l != nil {
-		return errInvalidOperation
+		return ErrInvalidOperation
 	}
 
 	// interface enabled
@@ -522,7 +522,7 @@ func (s *UDPSession) SetDSCP(dscp int) error {
 			return nil
 		}
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // SetReadBuffer sets the socket read buffer, no effect if it's accepted from Listener
@@ -534,7 +534,7 @@ func (s *UDPSession) SetReadBuffer(bytes int) error {
 			return nc.SetReadBuffer(bytes)
 		}
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // SetWriteBuffer sets the socket write buffer, no effect if it's accepted from Listener
@@ -546,7 +546,7 @@ func (s *UDPSession) SetWriteBuffer(bytes int) error {
 			return nc.SetWriteBuffer(bytes)
 		}
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // post-processing for sending a packet from kcp core
@@ -886,7 +886,7 @@ func (l *Listener) SetReadBuffer(bytes int) error {
 	if nc, ok := l.conn.(setReadBuffer); ok {
 		return nc.SetReadBuffer(bytes)
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // SetWriteBuffer sets the socket write buffer for the Listener
@@ -894,7 +894,7 @@ func (l *Listener) SetWriteBuffer(bytes int) error {
 	if nc, ok := l.conn.(setWriteBuffer); ok {
 		return nc.SetWriteBuffer(bytes)
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // SetDSCP sets the 6bit DSCP field in IPv4 header, or 8bit Traffic Class in IPv6 header.
@@ -920,7 +920,7 @@ func (l *Listener) SetDSCP(dscp int) error {
 			return nil
 		}
 	}
-	return errInvalidOperation
+	return ErrInvalidOperation
 }
 
 // Accept implements the Accept method in the Listener interface; it waits for the next call and returns a generic Conn.
@@ -937,7 +937,7 @@ func (l *Listener) AcceptKCP() (*UDPSession, error) {
 
 	select {
 	case <-timeout:
-		return nil, errors.WithStack(errTimeout)
+		return nil, errors.WithStack(ErrTimeout)
 	case c := <-l.chAccepts:
 		return c, nil
 	case <-l.chSocketReadError:
@@ -961,7 +961,7 @@ func (l *Listener) SetReadDeadline(t time.Time) error {
 }
 
 // SetWriteDeadline implements the Conn SetWriteDeadline method.
-func (l *Listener) SetWriteDeadline(t time.Time) error { return errInvalidOperation }
+func (l *Listener) SetWriteDeadline(t time.Time) error { return ErrInvalidOperation }
 
 // Close stops listening on the UDP address, and closes the socket
 func (l *Listener) Close() error {
